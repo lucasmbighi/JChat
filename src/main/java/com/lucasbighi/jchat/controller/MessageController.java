@@ -2,6 +2,7 @@ package com.lucasbighi.jchat.controller;
 
 import com.lucasbighi.jchat.dto.ChatMapper;
 import com.lucasbighi.jchat.dto.MessageResponse;
+import com.lucasbighi.jchat.dto.SendMessageRequest;
 import com.lucasbighi.jchat.model.Message;
 import com.lucasbighi.jchat.model.User;
 import com.lucasbighi.jchat.repository.UserRepository;
@@ -35,13 +36,13 @@ public class MessageController {
     public ResponseEntity<?> sendMessage(
             Authentication authentication,
             @PathVariable UUID chatId,
-            @RequestBody String content
+            @RequestBody SendMessageRequest request
             ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Message message = messageService.sendMessage(chatId, user.getId(), content);
+        Message message = messageService.sendMessage(chatId, user.getId(), request.getContent());
         return ResponseEntity.ok(chatMapper.toMessageResponse(message));
     }
 
