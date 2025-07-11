@@ -1,6 +1,7 @@
 package com.lucasbighi.jchat.controller;
 
-import com.lucasbighi.jchat.model.Chat;
+import com.lucasbighi.jchat.dto.ChatMapper;
+import com.lucasbighi.jchat.dto.MessageResponse;
 import com.lucasbighi.jchat.model.Message;
 import com.lucasbighi.jchat.model.User;
 import com.lucasbighi.jchat.repository.UserRepository;
@@ -18,36 +19,46 @@ public class MessageController {
 
     private final MessageService messageService;
     private final UserRepository userRepository;
+    private final ChatMapper chatMapper;
 
     public MessageController(
             MessageService messageService,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ChatMapper chatMapper
     ) {
         this.messageService = messageService;
         this.userRepository = userRepository;
+        this.chatMapper = chatMapper;
     }
 
-    @PostMapping
+    @PostMapping("/chat/{chatId}")
     public ResponseEntity<?> sendMessage(
             Authentication authentication,
-            @RequestParam UUID chatId,
-            @RequestParam String content
-    ) {
+            @PathVariable UUID chatId,
+            @RequestBody String content
+            ) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        return ResponseEntity.ok(messageService.sendMessage(chatId, user.getId(), content));
+        Message message = messageService.sendMessage(chatId, user.getId(), content);
+        return ResponseEntity.ok(chatMapper.toMessageResponse(message));
     }
 
     @GetMapping("/chat/{chatId}")
-    public ResponseEntity<List<Message>> getMessages(@PathVariable UUID chatId) {
-        return ResponseEntity.ok(messageService.getMessages(chatId));
+    public ResponseEntity<List<MessageResponse>> getMessages(@PathVariable UUID chatId) {
+        List<Message> messages = messageService.getMessages(chatId);
+        List<MessageResponse> responseList = messages.stream()
+                .map(chatMapper::toMessageResponse)
+                .toList();
+        return ResponseEntity.ok(responseList);
     }
 
     @GetMapping("/{messageId}")
-    public ResponseEntity<Message> getMessage(@PathVariable UUID messageId) {
-        return messageService.getMessageById(messageId)
+    public ResponseEntity<MessageResponse> getMessage(@PathVariable UUID messageId) {
+        Optional<Message> message = messageService.getMessageById(messageId);
+        return message
+                .map(chatMapper::toMessageResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
