@@ -56,8 +56,7 @@ public class MessageController {
 
     @GetMapping("/{messageId}")
     public ResponseEntity<MessageResponse> getMessage(@PathVariable UUID messageId) {
-        Optional<Message> message = messageService.getMessageById(messageId);
-        return message
+        return messageService.getMessageById(messageId)
                 .map(chatMapper::toMessageResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

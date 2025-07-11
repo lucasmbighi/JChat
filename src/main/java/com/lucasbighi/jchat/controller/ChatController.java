@@ -1,7 +1,10 @@
 package com.lucasbighi.jchat.controller;
 
+import com.lucasbighi.jchat.dto.ChatMapper;
+import com.lucasbighi.jchat.dto.ChatResponse;
 import com.lucasbighi.jchat.dto.CreateChatRequest;
 import com.lucasbighi.jchat.model.Chat;
+import com.lucasbighi.jchat.model.Message;
 import com.lucasbighi.jchat.model.User;
 import com.lucasbighi.jchat.repository.ChatRepository;
 import com.lucasbighi.jchat.repository.UserRepository;
@@ -21,15 +24,18 @@ public class ChatController {
     private final ChatService chatService;
     private final ChatRepository chatRepository;
     private final UserRepository userRepository;
+    private final ChatMapper chatMapper;
 
     public ChatController(
             ChatService chatService,
             ChatRepository chatRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            ChatMapper chatMapper
     ) {
         this.chatService = chatService;
         this.chatRepository = chatRepository;
         this.userRepository = userRepository;
+        this.chatMapper = chatMapper;
     }
 
     @PostMapping
@@ -49,12 +55,13 @@ public class ChatController {
         Chat saved = chatRepository.save(chat);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(saved);
+                .body(chatMapper.toChatResponse(saved));
     }
 
     @GetMapping("/{chatId}")
-    public ResponseEntity<Chat> getChat(@PathVariable UUID chatId) {
+    public ResponseEntity<ChatResponse> getChat(@PathVariable UUID chatId) {
         return chatService.getChatById(chatId)
+                .map(chatMapper::toChatResponse)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
@@ -66,12 +73,15 @@ public class ChatController {
     }
 
     @GetMapping("/user/{userId}")
-    public ResponseEntity<List<Chat>> getUserChats(Authentication authentication) {
+    public ResponseEntity<List<ChatResponse>> getUserChats(Authentication authentication) {
         String email = authentication.getName();
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         List<Chat> chats = chatRepository.findAllByParticipantsContaining(user);
-        return ResponseEntity.ok(chats);
+        List<ChatResponse> responseList = chats.stream()
+                .map(chatMapper::toChatResponse)
+                .toList();
+        return ResponseEntity.ok(responseList);
     }
 }
