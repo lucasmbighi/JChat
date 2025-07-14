@@ -42,7 +42,7 @@ public class MessageController {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
-        Message message = messageService.sendMessage(chatId, user.getId(), request.getContent());
+        Message message = messageService.sendMessage(chatId, user.getId(), request.content());
         return ResponseEntity.ok(chatMapper.toMessageResponse(message));
     }
 
