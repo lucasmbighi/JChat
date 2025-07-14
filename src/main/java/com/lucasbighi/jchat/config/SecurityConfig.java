@@ -1,6 +1,7 @@
-package com.lucasbighi.jchat.security;
+package com.lucasbighi.jchat.config;
 
 import com.lucasbighi.jchat.repository.UserRepository;
+import com.lucasbighi.jchat.security.JwtFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
